@@ -35,7 +35,7 @@ sudo systemctl restart craftbeerpi
 pipx runpip cbpi4 list | grep -i sensor
 ```
 
-Erwartet: Zeile mit `cbpi4_SensorAverage` / `1.0.2`.
+Erwartet: Zeile mit `cbpi4_SensorAverage` / `1.0.3`.
 
 Nach dem Neustart in den CBPi-Logs:
 
@@ -46,7 +46,7 @@ journalctl -u craftbeerpi -n 200 --no-pager | grep -iE 'SensorAverage|AveragingS
 
 Erfolgreich:
 
-- `Try to load plugin: cbpi4_SensorAverage == 1.0.2`
+- `Try to load plugin: cbpi4_SensorAverage == 1.0.3`
 - `Registered AveragingSensor`
 - `Plugin cbpi4_SensorAverage loaded successfully`
 
@@ -61,6 +61,9 @@ Chart:
 ```text
 http://<PI-IP>:8000/sensorchart/
 ```
+
+Zeitlinie (Dropdown): 1h, 6h, 12h, 24h, 48h, 7 Tage, **14 Tage**, 30 Tage — plus optional benutzerdefinierte Stunden.
+API: `GET /sensorchart/api/chart?sensor_id=…&hours=336` (beliebige Stunden, z.B. 14 Tage = 336).
 
 ### Optional: lokal aus Clone (nur für Entwickler)
 
@@ -109,6 +112,7 @@ python3 -m pytest -q
 
 ## Changelog
 
+* **1.0.3** – Chart-Zeitlinie: 14 Tage (336h) und 30 Tage (720h) im Dropdown; optional benutzerdefinierte Stunden. API/`filter_hours` akzeptiert weiterhin beliebige `hours`.
 * **1.0.2** – Setup robuster: `AveragingSensor` wird **immer zuerst** registriert; Chart/`CBPiExtension` wird separat gemountet und kann den Sensor-Typ nicht mehr blockieren. Docs: Pi-Logs, Reinstall, Dashboard.
 * **1.0.1** – Packaging an CBPi4-Konvention angeglichen (`pyproject.toml` nur Build-Backend; Metadaten in `setup.py`), damit `pipx runpip cbpi4 install …/archive/main.zip` zuverlässig baut
 * **1.0.0** – Eigenständiges Plugin: `AveragingSensor` + Chart-Seite `/sensorchart` (aus `cbpi4_BrewStart` ausgelagert)

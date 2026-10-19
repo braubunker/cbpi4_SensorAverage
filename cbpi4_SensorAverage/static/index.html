@@ -78,7 +78,13 @@
           <option value="24" selected>24 Stunden</option>
           <option value="48">48 Stunden</option>
           <option value="168">7 Tage</option>
+          <option value="336">14 Tage</option>
+          <option value="720">30 Tage</option>
+          <option value="custom">Benutzerdefiniert…</option>
         </select>
+      </label>
+      <label id="customHoursLabel" hidden>Stunden (benutzerdefiniert)
+        <input id="customHours" type="number" min="1" max="8760" step="1" placeholder="z.B. 336" />
       </label>
       <label>Mittelwert über N Punkte
         <input id="avg" type="number" min="1" max="500" value="5" />
@@ -130,8 +136,35 @@
       });
       const params = new URLSearchParams(location.search);
       if (params.get("sensor")) sel.value = params.get("sensor");
-      if (params.get("hours")) document.getElementById("hours").value = params.get("hours");
+      if (params.get("hours")) applyHoursParam(params.get("hours"));
       if (params.get("avg")) document.getElementById("avg").value = params.get("avg");
+    }
+
+    function applyHoursParam(raw) {
+      const sel = document.getElementById("hours");
+      const hours = String(raw || "");
+      const match = Array.from(sel.options).find(o => o.value === hours);
+      if (match && hours !== "custom") {
+        sel.value = hours;
+      } else if (hours && Number(hours) > 0) {
+        sel.value = "custom";
+        document.getElementById("customHours").value = hours;
+      }
+      syncCustomHours();
+    }
+
+    function syncCustomHours() {
+      const custom = document.getElementById("hours").value === "custom";
+      document.getElementById("customHoursLabel").hidden = !custom;
+    }
+
+    function selectedHours() {
+      const sel = document.getElementById("hours");
+      if (sel.value === "custom") {
+        const n = Number(document.getElementById("customHours").value);
+        return Number.isFinite(n) && n > 0 ? String(Math.round(n)) : "24";
+      }
+      return sel.value;
     }
 
     function render(payload) {
@@ -178,12 +211,19 @@
     async function loadChart() {
       document.getElementById("err").textContent = "";
       const sensor = document.getElementById("sensor").value;
-      const hours = document.getElementById("hours").value;
+      const hours = selectedHours();
       const avg = document.getElementById("avg").value;
       const method = document.getElementById("method").value;
       if (!sensor) {
         document.getElementById("err").textContent = "Kein Sensor gewählt.";
         return;
+      }
+      if (document.getElementById("hours").value === "custom") {
+        const n = Number(document.getElementById("customHours").value);
+        if (!Number.isFinite(n) || n <= 0) {
+          document.getElementById("err").textContent = "Bitte gültige Stundenanzahl eingeben.";
+          return;
+        }
       }
       const url = `${base}/api/chart?sensor_id=${encodeURIComponent(sensor)}&hours=${hours}&average=${avg}&method=${encodeURIComponent(method)}`;
       try {
@@ -195,6 +235,7 @@
       }
     }
 
+    document.getElementById("hours").onchange = syncCustomHours;
     document.getElementById("load").onclick = loadChart;
     document.getElementById("auto").onclick = () => {
       const btn = document.getElementById("auto");

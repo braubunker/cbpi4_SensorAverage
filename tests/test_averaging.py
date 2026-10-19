@@ -116,6 +116,22 @@ def test_filter_hours():
     assert [v for _, v in filtered] == [2.0, 3.0]
 
 
+def test_filter_hours_14_days():
+    """API accepts arbitrary hours; 14 Tage = 336h must keep points in range."""
+    now = datetime(2026, 10, 19, 12, 0, 0)
+    points = [
+        (now - timedelta(days=20), 0.0),  # outside 14d
+        (now - timedelta(days=13), 1.0),
+        (now - timedelta(days=7), 2.0),
+        (now - timedelta(hours=1), 3.0),
+    ]
+    filtered = filter_hours(points, hours=336, now=now)
+    assert [v for _, v in filtered] == [1.0, 2.0, 3.0]
+    payload = chart_payload(points, hours=336, average_window=1, method="mean", now=now)
+    assert payload["hours"] == 336
+    assert payload["count"] == 3
+
+
 def test_chart_payload():
     now = datetime(2026, 10, 19, 12, 0, 0)
     points = [(now - timedelta(minutes=i), float(i)) for i in range(10)]
