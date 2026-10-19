@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CBPi Sensor Chart</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #1a1f1c;
+      --panel: #243028;
+      --text: #e8efe6;
+      --muted: #9aab9a;
+      --accent: #6fbf73;
+      --line: #3d4a40;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #2c3b30, var(--bg));
+      color: var(--text);
+      min-height: 100vh;
+      padding: 1rem;
+    }
+    h1 { margin: 0 0 .25rem; font-size: 1.35rem; font-weight: 650; }
+    .sub { color: var(--muted); margin-bottom: 1rem; font-size: .95rem; }
+    .panel {
+      background: color-mix(in srgb, var(--panel) 92%, black);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .75rem;
+      align-items: end;
+    }
+    label { display: grid; gap: .35rem; font-size: .85rem; color: var(--muted); }
+    select, input, button {
+      font: inherit;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #18211c;
+      color: var(--text);
+      padding: .55rem .7rem;
+    }
+    button {
+      background: var(--accent);
+      color: #102014;
+      border: none;
+      font-weight: 650;
+      cursor: pointer;
+    }
+    button.secondary { background: transparent; color: var(--text); border: 1px solid var(--line); }
+    .meta { color: var(--muted); font-size: .85rem; margin-top: .75rem; }
+    .chart-wrap { position: relative; height: min(62vh, 520px); }
+    a { color: var(--accent); }
+    .err { color: #ffb4b4; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Sensor-Chart</h1>
+  <p class="sub">Zeitlinie und Mittelwert über Messungen — für Waage, Druck, Temp, …</p>
+
+  <div class="panel">
+    <div class="controls">
+      <label>Sensor
+        <select id="sensor"></select>
+      </label>
+      <label>Zeitlinie
+        <select id="hours">
+          <option value="1">1 Stunde</option>
+          <option value="6">6 Stunden</option>
+          <option value="12">12 Stunden</option>
+          <option value="24" selected>24 Stunden</option>
+          <option value="48">48 Stunden</option>
+          <option value="168">7 Tage</option>
+        </select>
+      </label>
+      <label>Mittelwert über N Punkte
+        <input id="avg" type="number" min="1" max="500" value="5" />
+      </label>
+      <label>Methode
+        <select id="method">
+          <option value="mean" selected>mean</option>
+          <option value="median">median</option>
+          <option value="min">min</option>
+          <option value="max">max</option>
+        </select>
+      </label>
+      <button id="load">Chart laden</button>
+      <button id="auto" class="secondary">Auto: aus</button>
+    </div>
+    <div class="meta" id="meta">Sensor wählen und laden.</div>
+    <div class="err" id="err"></div>
+  </div>
+
+  <div class="panel chart-wrap">
+    <canvas id="chart"></canvas>
+  </div>
+
+  <p class="sub">
+    Tipp: Für glatte Kurven einen <b>AveragingSensor</b> mit LogData=Yes anlegen und hier auswählen.
+    Dashboard-Chart-Widget geht ebenfalls über denselben Sensor.
+  </p>
+
+  <script>
+    const base = document.location.pathname.replace(/\/static\/.*$/, "");
+    let chart;
+    let timer = null;
+
+    async function fetchJSON(url, opts) {
+      const res = await fetch(url, opts);
+      if (!res.ok) throw new Error(await res.text() || res.statusText);
+      return res.json();
+    }
+
+    async function loadSensors() {
+      const data = await fetchJSON(base + "/api/sensors");
+      const sel = document.getElementById("sensor");
+      sel.innerHTML = "";
+      (data.sensors || []).forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s.id;
+        opt.textContent = `${s.name} (${s.type || "?"})`;
+        sel.appendChild(opt);
+      });
+      const params = new URLSearchParams(location.search);
+      if (params.get("sensor")) sel.value = params.get("sensor");
+      if (params.get("hours")) document.getElementById("hours").value = params.get("hours");
+      if (params.get("avg")) document.getElementById("avg").value = params.get("avg");
+    }
+
+    function render(payload) {
+      const ctx = document.getElementById("chart");
+      const config = {
+        type: "line",
+        data: {
+          labels: payload.time || [],
+          datasets: [{
+            label: payload.sensor_name || "Sensor",
+            data: payload.value || [],
+            borderColor: "#6fbf73",
+            backgroundColor: "rgba(111,191,115,.15)",
+            tension: 0.2,
+            pointRadius: 0,
+            borderWidth: 2,
+            fill: true,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              ticks: { color: "#9aab9a", maxTicksLimit: 8 },
+              grid: { color: "rgba(255,255,255,.06)" }
+            },
+            y: {
+              ticks: { color: "#9aab9a" },
+              grid: { color: "rgba(255,255,255,.06)" }
+            }
+          },
+          plugins: {
+            legend: { labels: { color: "#e8efe6" } }
+          }
+        }
+      };
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, config);
+      document.getElementById("meta").textContent =
+        `${payload.count || 0} Punkte · Zeitlinie ${payload.hours}h · Mittelwert Fenster ${payload.average_window} (${payload.method})`;
+    }
+
+    async function loadChart() {
+      document.getElementById("err").textContent = "";
+      const sensor = document.getElementById("sensor").value;
+      const hours = document.getElementById("hours").value;
+      const avg = document.getElementById("avg").value;
+      const method = document.getElementById("method").value;
+      if (!sensor) {
+        document.getElementById("err").textContent = "Kein Sensor gewählt.";
+        return;
+      }
+      const url = `${base}/api/chart?sensor_id=${encodeURIComponent(sensor)}&hours=${hours}&average=${avg}&method=${encodeURIComponent(method)}`;
+      try {
+        const payload = await fetchJSON(url);
+        render(payload);
+        history.replaceState(null, "", `?sensor=${sensor}&hours=${hours}&avg=${avg}`);
+      } catch (e) {
+        document.getElementById("err").textContent = String(e.message || e);
+      }
+    }
+
+    document.getElementById("load").onclick = loadChart;
+    document.getElementById("auto").onclick = () => {
+      const btn = document.getElementById("auto");
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+        btn.textContent = "Auto: aus";
+      } else {
+        loadChart();
+        timer = setInterval(loadChart, 30000);
+        btn.textContent = "Auto: 30s";
+      }
+    };
+
+    loadSensors().then(() => {
+      if (document.getElementById("sensor").value) loadChart();
+    }).catch(e => {
+      document.getElementById("err").textContent = "Sensorliste: " + e;
+    });
+  </script>
+</body>
+</html>
