@@ -5,9 +5,9 @@ CraftBeerPi4-Plugin mit:
 1. **`AveragingSensor`** – Mittelwert über mehrere Messungen eines Quellsensors + Logging für Charts  
 2. **Sensor-Chart-Seite** – eigene Chart-UI mit einstellbarer Zeitlinie und Mittelwert unter `/sensorchart`
 
-## Installation
+## Installation (empfohlen)
 
-Direkt vom GitHub-Repo (auf dem Pi):
+Auf dem Raspberry Pi / CBPi-Host **diese eine Zeile** ausführen (kein Clone nötig):
 
 ```bash
 pipx runpip cbpi4 install https://github.com/braubunker/cbpi4_SensorAverage/archive/main.zip
@@ -16,15 +16,30 @@ sudo systemctl restart craftbeerpi
 
 Repo: https://github.com/braubunker/cbpi4_SensorAverage
 
-Lokal / editierbar:
+Chart danach:
 
-```bash
-pipx runpip cbpi4 install .
-# oder:
-pipx runpip cbpi4 install -e /pfad/zu/cbpi4_SensorAverage
+```text
+http://<PI-IP>:8000/sensorchart/
 ```
 
-Danach CraftBeerPi4 neu starten (`cbpi start` bzw. Service neu starten).
+### Optional: lokal aus Clone (nur für Entwickler)
+
+Nur nötig, wenn du das Repo selbst geklont hast. **Nicht** `.` oder einen Beispielpfad wörtlich kopieren, wenn du nicht im Clone-Verzeichnis bist:
+
+```bash
+git clone https://github.com/braubunker/cbpi4_SensorAverage.git
+cd cbpi4_SensorAverage
+pipx runpip cbpi4 install .
+sudo systemctl restart craftbeerpi
+```
+
+Editierbar (ebenfalls nur im Clone):
+
+```bash
+cd ~/cbpi4_SensorAverage   # dein tatsächlicher Clone-Pfad
+pipx runpip cbpi4 install -e .
+sudo systemctl restart craftbeerpi
+```
 
 ## AveragingSensor anlegen
 
