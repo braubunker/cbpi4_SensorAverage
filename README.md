@@ -7,16 +7,30 @@ CraftBeerPi4-Plugin mit:
 
 ## Installation (empfohlen)
 
-Auf dem Raspberry Pi / CBPi-Host **diese eine Zeile** ausführen (kein Clone nötig):
+Auf dem Raspberry Pi / CBPi-Host:
 
 ```bash
+pipx runpip cbpi4 uninstall cbpi4_SensorAverage
 pipx runpip cbpi4 install https://github.com/braubunker/cbpi4_SensorAverage/archive/main.zip
 sudo systemctl restart craftbeerpi
 ```
 
 Repo: https://github.com/braubunker/cbpi4_SensorAverage
 
-Chart danach:
+### Installation prüfen
+
+```bash
+pipx runpip cbpi4 list | grep -i sensor
+```
+
+Erwartet: Zeile mit `cbpi4_SensorAverage` / `1.0.1`.
+
+Nach dem Neustart in den CBPi-Logs (`journalctl -u craftbeerpi -n 100 --no-pager` bzw. Ausgabe von `cbpi start`):
+
+- `Registered AveragingSensor`
+- `Registered SensorChartEndpoint (/sensorchart)` bzw. `SensorChartEndpoint mounted at /sensorchart`
+
+Chart:
 
 ```text
 http://<PI-IP>:8000/sensorchart/
@@ -89,4 +103,5 @@ python3 -m pytest -q
 
 ## Changelog
 
+* **1.0.1** – Packaging an CBPi4-Konvention angeglichen (`pyproject.toml` nur Build-Backend; Metadaten in `setup.py`), damit `pipx runpip cbpi4 install …/archive/main.zip` zuverlässig baut
 * **1.0.0** – Eigenständiges Plugin: `AveragingSensor` + Chart-Seite `/sensorchart` (aus `cbpi4_BrewStart` ausgelagert)

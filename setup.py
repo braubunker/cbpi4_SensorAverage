@@ -8,12 +8,13 @@ with open(path.join(this_directory, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="cbpi4_SensorAverage",
-    version="1.0.0",
+    version="1.0.1",
     description="CraftBeerPi4: AveragingSensor und Sensor-Chart (/sensorchart)",
     author="CraftBeerPi Community",
     url="https://github.com/braubunker/cbpi4_SensorAverage",
     include_package_data=True,
     package_data={
+        # If any package contains *.txt or *.rst files, include them:
         "": ["*.txt", "*.rst", "*.yaml", "*.md", "*.html", "*.js", "*.css"],
         "cbpi4_SensorAverage": [
             "*",
@@ -24,6 +25,7 @@ setup(
             "*.html",
             "*.js",
             "*.css",
+            "static/*",
         ],
     },
     packages=["cbpi4_SensorAverage"],

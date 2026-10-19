@@ -1,28 +1,7 @@
+# Minimal build backend — metadata lives in setup.py (CraftBeerPi4 plugin convention).
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools >= 42.0.0"]
 build-backend = "setuptools.build_meta"
-
-[project]
-name = "cbpi4_SensorAverage"
-version = "1.0.0"
-description = "CraftBeerPi4: AveragingSensor und Sensor-Chart (/sensorchart)"
-readme = "README.md"
-license = { text = "GPL-3.0-or-later" }
-requires-python = ">=3.8"
-dependencies = []
-
-[project.optional-dependencies]
-test = ["pytest>=7.0"]
-
-[project.urls]
-Homepage = "https://github.com/braubunker/cbpi4_SensorAverage"
-Repository = "https://github.com/braubunker/cbpi4_SensorAverage"
-
-[tool.setuptools]
-packages = ["cbpi4_SensorAverage"]
-
-[tool.setuptools.package-data]
-cbpi4_SensorAverage = ["*.yaml", "*.md", "*.html", "*.js", "*.css", "static/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
