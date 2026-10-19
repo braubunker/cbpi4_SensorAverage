@@ -17,7 +17,15 @@ class SensorChartEndpoint(CBPiExtension):
 
     def __init__(self, cbpi):
         self.cbpi = cbpi
-        self.cbpi.register(self, "/sensorchart", static=STATIC_DIR)
+        static = STATIC_DIR if os.path.isdir(STATIC_DIR) else None
+        if static is None:
+            logger.warning(
+                "SensorChart static dir missing (%s); mounting API without static files",
+                STATIC_DIR,
+            )
+        # cbpi.register parses @request_mapping and mounts the subapp.
+        # Keep this resilient: missing static / duplicate prefix must not crash.
+        self.cbpi.register(self, "/sensorchart", static=static)
         logger.info("SensorChartEndpoint mounted at /sensorchart")
 
     @request_mapping(path="/", auth_required=False)
@@ -131,3 +139,15 @@ class SensorChartEndpoint(CBPiExtension):
                         block.get("value") or block.get(key) or [],
                     )
         return times, values
+
+
+def mount_sensor_chart(cbpi):
+    """
+    Mount the chart endpoint without going through plugin.register().
+
+    CBPi's plugin.register() instantiates CBPiExtension subclasses immediately.
+    Instantiating here keeps chart failures isolated from AveragingSensor
+    registration and avoids treating the extension as a "plugin type".
+    """
+    SensorChartEndpoint(cbpi)
+    logger.info("Registered SensorChartEndpoint (/sensorchart)")
